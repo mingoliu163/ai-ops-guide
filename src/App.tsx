@@ -8,6 +8,7 @@ import PC from "./pages/PC";
 import Phone from "./pages/Phone";
 import Reports from "./pages/Reports";
 import Auth from "./pages/Auth";
+import AutoRedirect from "./pages/AutoRedirect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,7 +21,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Navigate to="/pc" replace />} />
+          <Route path="/" element={<FeishuGuard><AutoRedirect /></FeishuGuard>} />
           <Route path="/pc" element={<FeishuGuard><PC /></FeishuGuard>} />
           <Route path="/phone" element={<FeishuGuard><Phone /></FeishuGuard>} />
           <Route path="/reports" element={<FeishuGuard><Reports /></FeishuGuard>} />
