@@ -1,1 +1,4 @@
 project_id = "awwdfsoycnnhykezauhc"
+
+[functions.feishu-auth]
+verify_jwt = false

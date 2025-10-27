@@ -1,28 +1,41 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 interface FeishuGuardProps {
   children: React.ReactNode;
 }
 
 export const FeishuGuard = ({ children }: FeishuGuardProps) => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isFeishu, setIsFeishu] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // 检测是否在飞书环境中
+    // Check if in Feishu environment
     const userAgent = navigator.userAgent.toLowerCase();
     const isFeishuClient = userAgent.includes('lark') || userAgent.includes('feishu');
-    
-    // 开发环境下允许访问，生产环境严格检查
     const isDevelopment = import.meta.env.DEV;
+    
     setIsFeishu(isDevelopment || isFeishuClient);
-  }, []);
 
-  if (isFeishu === null) {
+    // Check authentication
+    const token = localStorage.getItem('feishu_token');
+    const profile = localStorage.getItem('feishu_profile');
+    
+    if (token && profile) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+      navigate('/auth');
+    }
+  }, [navigate]);
+
+  if (isFeishu === null || isAuthenticated === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">加载中...</div>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -39,6 +52,10 @@ export const FeishuGuard = ({ children }: FeishuGuardProps) => {
         </Card>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return <>{children}</>;

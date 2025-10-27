@@ -7,6 +7,7 @@ import { FeishuGuard } from "./components/FeishuGuard";
 import PC from "./pages/PC";
 import Phone from "./pages/Phone";
 import Reports from "./pages/Reports";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,15 +18,14 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <FeishuGuard>
-          <Routes>
-            <Route path="/" element={<Navigate to="/pc" replace />} />
-            <Route path="/pc" element={<PC />} />
-            <Route path="/phone" element={<Phone />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </FeishuGuard>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<Navigate to="/pc" replace />} />
+          <Route path="/pc" element={<FeishuGuard><PC /></FeishuGuard>} />
+          <Route path="/phone" element={<FeishuGuard><Phone /></FeishuGuard>} />
+          <Route path="/reports" element={<FeishuGuard><Reports /></FeishuGuard>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
