@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      inspection_records: {
+        Row: {
+          ai_result: Json | null
+          created_at: string | null
+          id: string
+          ip_addresses: string[]
+          query_info: Json | null
+          score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_result?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_addresses: string[]
+          query_info?: Json | null
+          score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_result?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_addresses?: string[]
+          query_info?: Json | null
+          score?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          feishu_open_id: string | null
+          feishu_union_id: string | null
+          id: string
+          mobile: string | null
+          name: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          feishu_open_id?: string | null
+          feishu_union_id?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          feishu_open_id?: string | null
+          feishu_union_id?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
