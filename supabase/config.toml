@@ -2,3 +2,6 @@ project_id = "awwdfsoycnnhykezauhc"
 
 [functions.feishu-auth]
 verify_jwt = false
+
+[functions.ip-inspection]
+verify_jwt = false

@@ -26,20 +26,52 @@ const Phone = () => {
 
     setIsLoading(true);
     
-    // TODO: 调用后端API进行IP巡检
-    setTimeout(() => {
+    try {
+      // Parse IP addresses from input (one per line)
+      const ipAddresses = ipInput.split('\n')
+        .map(ip => ip.trim())
+        .filter(ip => ip.length > 0);
+
+      const response = await fetch(
+        'https://awwdfsoycnnhykezauhc.supabase.co/functions/v1/ip-inspection',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ipAddresses }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`请求失败: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
       setResults({
-        score: 85,
-        details: "服务器运行正常，CPU使用率65%，内存使用率72%",
-        location: "深圳",
+        score: data.aiResult?.score || 0,
+        details: data.aiResult?.analysis || '分析结果不可用',
+        suggestions: data.aiResult?.suggestions || '',
+        location: data.location,
         timestamp: new Date().toLocaleString("zh-CN"),
+        nagiosData: data.nagiosData,
       });
-      setIsLoading(false);
+      
       toast({
         title: "巡检完成",
-        description: "AI分析已完成",
+        description: `AI分析已完成，评分：${data.aiResult?.score || 0}/10`,
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Inspection error:', error);
+      toast({
+        title: "巡检失败",
+        description: error instanceof Error ? error.message : "请稍后重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -142,12 +174,23 @@ const Phone = () => {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-2">详细信息</p>
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-background/50">
-                  <AlertCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                  <p className="text-xs leading-relaxed">{results.details}</p>
+              <div className="pt-3 border-t border-border space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">AI分析</p>
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-background/50">
+                    <AlertCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-xs leading-relaxed">{results.details}</p>
+                  </div>
                 </div>
+                
+                {results.suggestions && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">改进建议</p>
+                    <div className="p-3 rounded-lg bg-background/50">
+                      <p className="text-xs leading-relaxed">{results.suggestions}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
