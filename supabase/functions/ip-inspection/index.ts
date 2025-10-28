@@ -21,10 +21,33 @@ serve(async (req) => {
   }
 
   try {
-    const { ipAddresses }: InspectionRequest = await req.json();
-    console.log('Received IP addresses for inspection:', ipAddresses);
+    // Only allow POST
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    if (!ipAddresses || ipAddresses.length === 0) {
+    // Safely parse JSON body (handle empty/invalid JSON)
+    let ipAddresses: string[] | undefined;
+    try {
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const bodyText = await req.text();
+        if (bodyText && bodyText.trim().length > 0) {
+          const parsed: InspectionRequest = JSON.parse(bodyText);
+          ipAddresses = parsed.ipAddresses;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse JSON body:', e);
+    }
+
+    const ipList = Array.isArray(ipAddresses) ? ipAddresses : [];
+    console.log('Received IP addresses for inspection:', ipList);
+
+    if (ipList.length === 0) {
       return new Response(
         JSON.stringify({ error: '请提供至少一个IP地址' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -41,7 +64,7 @@ serve(async (req) => {
     }
 
     // Process first IP address
-    const ipAddress = ipAddresses[0].trim();
+    const ipAddress = ipList[0].trim();
     console.log('Processing IP:', ipAddress);
 
     // Determine location based on IP pattern
