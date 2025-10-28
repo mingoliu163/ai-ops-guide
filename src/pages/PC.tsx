@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Activity, Server, TrendingUp, AlertCircle } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -12,7 +13,15 @@ const PC = () => {
   const [ipInput, setIpInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const profileData = localStorage.getItem('feishu_profile');
+    if (profileData) {
+      setUserProfile(JSON.parse(profileData));
+    }
+  }, []);
 
   const handleInspection = async () => {
     if (!ipInput.trim()) {
@@ -63,10 +72,18 @@ const PC = () => {
                 </h1>
                 <p className="text-muted-foreground mt-1">智能分析服务器状态，提升运维效率</p>
               </div>
-              <Badge variant="outline" className="h-8 px-4 border-primary/50">
-                <Activity className="w-4 h-4 mr-2" />
-                PC端
-              </Badge>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 border-2 border-primary/20">
+                  <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {userProfile?.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{userProfile?.name || '用户'}</p>
+                  <p className="text-xs text-muted-foreground">PC端</p>
+                </div>
+              </div>
             </div>
 
             {/* IP Input Card */}
