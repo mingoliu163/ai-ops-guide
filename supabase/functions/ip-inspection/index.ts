@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,6 +79,50 @@ serve(async (req) => {
     // Call Qwen AI for scoring
     const aiResult = await callQwenAI(nagiosData, qwenApiKey);
     console.log('AI analysis completed');
+
+    // Save inspection record to database
+    try {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // Extract token from authorization header
+        const token = authHeader.replace('Bearer ', '');
+        
+        // Get user from token
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+        
+        if (user && !userError) {
+          // Get profile by feishu_open_id
+          const feishuOpenId = user.user_metadata?.feishu_open_id;
+          
+          if (feishuOpenId) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('feishu_open_id', feishuOpenId)
+              .single();
+
+            if (profile) {
+              // Insert inspection record
+              await supabase.from('inspection_records').insert({
+                user_id: profile.id,
+                ip_addresses: ipList,
+                query_info: nagiosData,
+                ai_result: aiResult,
+                score: aiResult?.score || 0
+              });
+              console.log('Inspection record saved to database');
+            }
+          }
+        }
+      }
+    } catch (dbError) {
+      console.error('Failed to save inspection record:', dbError);
+      // Don't fail the request if DB insert fails
+    }
 
     return new Response(
       JSON.stringify({
