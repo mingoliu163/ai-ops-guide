@@ -82,20 +82,19 @@ serve(async (req) => {
 
     // Save inspection record to database
     try {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader) {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // Extract token from authorization header
+      let userId: string | null = null;
+      const authHeader = req.headers.get('authorization');
+      
+      if (authHeader) {
+        // Try to get user from auth token
         const token = authHeader.replace('Bearer ', '');
-        
-        // Get user from token
         const { data: { user }, error: userError } = await supabase.auth.getUser(token);
         
         if (user && !userError) {
-          // Get profile by feishu_open_id
           const feishuOpenId = user.user_metadata?.feishu_open_id;
           
           if (feishuOpenId) {
@@ -106,18 +105,54 @@ serve(async (req) => {
               .single();
 
             if (profile) {
-              // Insert inspection record
-              await supabase.from('inspection_records').insert({
-                user_id: profile.id,
-                ip_addresses: ipList,
-                query_info: nagiosData,
-                ai_result: aiResult,
-                score: aiResult?.score || 0
-              });
-              console.log('Inspection record saved to database');
+              userId = profile.id;
             }
           }
         }
+      }
+      
+      // If no user found from auth, try to get or create a test user profile
+      if (!userId) {
+        console.log('No authenticated user, using test user for development');
+        
+        // Try to find existing test user
+        const { data: testProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', 'test@test.com')
+          .single();
+        
+        if (testProfile) {
+          userId = testProfile.id;
+        } else {
+          // Create test user profile
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              email: 'test@test.com',
+              name: '测试用户',
+              feishu_open_id: 'test_user_dev'
+            })
+            .select('id')
+            .single();
+          
+          if (newProfile && !insertError) {
+            userId = newProfile.id;
+            console.log('Created test user profile');
+          }
+        }
+      }
+
+      // Insert inspection record if we have a user_id
+      if (userId) {
+        await supabase.from('inspection_records').insert({
+          user_id: userId,
+          ip_addresses: ipList,
+          query_info: nagiosData,
+          ai_result: aiResult,
+          score: aiResult?.score || 0
+        });
+        console.log('Inspection record saved to database');
       }
     } catch (dbError) {
       console.error('Failed to save inspection record:', dbError);

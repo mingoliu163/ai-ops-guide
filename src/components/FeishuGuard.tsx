@@ -20,6 +20,12 @@ export const FeishuGuard = ({ children }: FeishuGuardProps) => {
     
     setIsFeishu(isDevelopment || isFeishuClient);
 
+    // In development mode, skip authentication check
+    if (isDevelopment) {
+      setIsAuthenticated(true);
+      return;
+    }
+
     // Check authentication
     const token = localStorage.getItem('feishu_token');
     const profile = localStorage.getItem('feishu_profile');

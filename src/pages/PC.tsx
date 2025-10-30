@@ -42,7 +42,7 @@ const PC = () => {
         .map(ip => ip.trim())
         .filter(ip => ip.length > 0);
 
-      // Get auth token
+      // Get auth token (optional in dev mode)
       const { data: { session } } = await supabase.auth.getSession();
       
       const response = await fetch(
