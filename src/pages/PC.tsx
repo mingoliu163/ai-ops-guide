@@ -8,6 +8,7 @@ import { Activity, Server, TrendingUp, AlertCircle } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PC = () => {
   const [ipInput, setIpInput] = useState("");
@@ -66,6 +67,30 @@ const PC = () => {
         timestamp: new Date().toLocaleString("zh-CN"),
         nagiosData: data.nagiosData,
       });
+
+      // Store inspection record in database
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('feishu_open_id', user.user_metadata?.feishu_open_id)
+            .single();
+
+          if (profile) {
+            await supabase.from('inspection_records').insert({
+              user_id: profile.id,
+              ip_addresses: ipAddresses,
+              query_info: data.nagiosData,
+              ai_result: data.aiResult,
+              score: data.aiResult?.score || 0
+            });
+          }
+        }
+      } catch (dbError) {
+        console.error('Failed to save inspection record:', dbError);
+      }
       
       toast({
         title: "巡检完成",
